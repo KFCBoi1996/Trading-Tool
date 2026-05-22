@@ -6,6 +6,7 @@ const state = {
 const elements = {
   marketUrl: document.querySelector("#marketUrl"),
   marketFrame: document.querySelector("#marketFrame"),
+  browserContent: document.querySelector(".browser-content"),
   browserForm: document.querySelector("#browserForm"),
   captureTicker: document.querySelector("#captureTicker"),
   copyUrl: document.querySelector("#copyUrl"),
@@ -209,6 +210,7 @@ elements.browserForm.addEventListener("submit", (event) => {
   const url = toFrameUrl(elements.marketUrl.value);
   elements.marketUrl.value = url;
   elements.marketFrame.src = url;
+  elements.browserContent.classList.add("has-loaded");
 });
 
 elements.copyUrl.addEventListener("click", async () => {
@@ -235,7 +237,6 @@ elements.captureTicker.addEventListener("click", pullLiveData);
 elements.refreshQuote.addEventListener("click", () => loadQuote(state.symbol).catch((error) => setError(error.message)));
 elements.demoApple.addEventListener("click", () => {
   elements.marketUrl.value = "https://finance.yahoo.com/quote/AAPL";
-  elements.marketFrame.src = elements.marketUrl.value;
   loadQuote("AAPL").catch((error) => setError(error.message));
 });
 
@@ -247,7 +248,6 @@ elements.sampleTickers.addEventListener("click", (event) => {
 
   const symbol = button.dataset.symbol;
   elements.marketUrl.value = `https://finance.yahoo.com/quote/${encodeURIComponent(symbol)}`;
-  elements.marketFrame.src = elements.marketUrl.value;
   loadQuote(symbol).catch((error) => setError(error.message));
 });
 

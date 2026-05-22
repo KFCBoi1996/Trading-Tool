@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>SignalGlass Market Browser</title>
-    <link rel="stylesheet" href="/styles.css" />
+    <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
     <div class="background-orb orb-one"></div>
@@ -25,15 +25,38 @@
 
     <main>
       <section class="hero">
-        <p class="eyebrow">Market intelligence studio</p>
-        <h1>Browse any market page. Turn its ticker into a live signal board.</h1>
-        <p class="hero-copy">
-          A calm, glass-rich trading interface inspired by premium product pages, built around
-          a functional browser, automatic ticker detection, and live quote visualization.
-        </p>
-        <div class="hero-actions">
-          <a class="primary-button" href="#browser">Launch browser</a>
-          <button class="secondary-button" id="demoApple" type="button">Load AAPL demo</button>
+        <div class="hero-content">
+          <p class="eyebrow">Market intelligence studio</p>
+          <h1>Browse any market page. Turn its ticker into a live signal board.</h1>
+          <p class="hero-copy">
+            A calm, glass-rich trading interface inspired by premium product pages, built around
+            a functional browser, automatic ticker detection, and live quote visualization.
+          </p>
+          <div class="hero-actions">
+            <a class="primary-button" href="#browser">Launch browser</a>
+            <button class="secondary-button" id="demoApple" type="button">Load AAPL demo</button>
+          </div>
+        </div>
+        <div class="product-stage" aria-label="SignalGlass product preview">
+          <div class="glass-device">
+            <div class="device-toolbar">
+              <span></span>
+              <span></span>
+              <span></span>
+            </div>
+            <div class="device-chart">
+              <span style="height: 38%"></span>
+              <span style="height: 54%"></span>
+              <span style="height: 46%"></span>
+              <span style="height: 72%"></span>
+              <span style="height: 84%"></span>
+              <span style="height: 66%"></span>
+            </div>
+            <div class="device-readout">
+              <strong>AAPL</strong>
+              <span>+1.82%</span>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -118,9 +141,18 @@
           <iframe
             id="marketFrame"
             title="Built-in market browser"
-            src="https://finance.yahoo.com/quote/AAPL"
+            src="about:blank"
+            data-placeholder="true"
             referrerpolicy="no-referrer"
           ></iframe>
+          <div class="browser-empty" id="browserEmpty">
+            <p class="eyebrow">Built-in browser</p>
+            <h3>Enter a market URL or ticker, then press Go.</h3>
+            <p>
+              The live dashboard above already works with AAPL. Loading the browser on demand keeps
+              the SignalGlass interface visible even when finance sites block embedding.
+            </p>
+          </div>
           <div class="browser-note">
             Some market sites block embedded browsing. If a page refuses to load here, keep its URL
             in the address bar or open it in a new tab, then press <strong>Pull live data</strong>.
@@ -134,6 +166,6 @@
       <span>Data is sourced through a server-side market provider proxy.</span>
     </footer>
 
-    <script src="/app.js" type="module"></script>
+    <script src="app.js" type="module"></script>
   </body>
 </html>
