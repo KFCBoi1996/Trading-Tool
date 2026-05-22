@@ -121,6 +121,7 @@ footer {
 .primary-button,
 .secondary-button,
 .address-form button,
+.utility-button,
 .capture-button,
 .chip-row button {
   border: 0;
@@ -389,12 +390,14 @@ canvas {
 }
 
 .address-form button,
+.utility-button,
 .capture-button {
   padding: 0.85rem 1rem;
   font-weight: 800;
 }
 
-.address-form button {
+.address-form button,
+.utility-button {
   background: white;
 }
 
@@ -491,6 +494,7 @@ footer {
   .primary-button,
   .secondary-button,
   .address-form button,
+  .utility-button,
   .capture-button {
     width: 100%;
   }

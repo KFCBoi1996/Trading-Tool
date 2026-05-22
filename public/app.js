@@ -8,6 +8,8 @@ const elements = {
   marketFrame: document.querySelector("#marketFrame"),
   browserForm: document.querySelector("#browserForm"),
   captureTicker: document.querySelector("#captureTicker"),
+  copyUrl: document.querySelector("#copyUrl"),
+  openUrl: document.querySelector("#openUrl"),
   refreshQuote: document.querySelector("#refreshQuote"),
   demoApple: document.querySelector("#demoApple"),
   quoteName: document.querySelector("#quoteName"),
@@ -207,6 +209,26 @@ elements.browserForm.addEventListener("submit", (event) => {
   const url = toFrameUrl(elements.marketUrl.value);
   elements.marketUrl.value = url;
   elements.marketFrame.src = url;
+});
+
+elements.copyUrl.addEventListener("click", async () => {
+  const url = toFrameUrl(elements.marketUrl.value || elements.marketFrame.src);
+  elements.marketUrl.value = url;
+  try {
+    await navigator.clipboard.writeText(url);
+    elements.copyUrl.textContent = "Copied";
+    window.setTimeout(() => {
+      elements.copyUrl.textContent = "Copy URL";
+    }, 1400);
+  } catch {
+    elements.marketUrl.select();
+  }
+});
+
+elements.openUrl.addEventListener("click", () => {
+  const url = toFrameUrl(elements.marketUrl.value || elements.marketFrame.src);
+  elements.marketUrl.value = url;
+  window.open(url, "_blank", "noopener,noreferrer");
 });
 
 elements.captureTicker.addEventListener("click", pullLiveData);
