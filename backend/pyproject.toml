@@ -1,0 +1,22 @@
+[project]
+name = "fx-signal-intelligence-backend"
+version = "0.1.0"
+description = "FastAPI backend for the FX Signal Intelligence MVP"
+requires-python = ">=3.11"
+dependencies = [
+  "fastapi",
+  "uvicorn[standard]",
+  "pydantic",
+  "pydantic-settings",
+  "SQLAlchemy",
+  "alembic",
+  "psycopg[binary]",
+  "python-dotenv"
+]
+
+[project.optional-dependencies]
+test = ["pytest", "httpx"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]

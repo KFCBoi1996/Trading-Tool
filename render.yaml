@@ -1,0 +1,58 @@
+services:
+  - type: web
+    name: fx-signal-backend
+    runtime: python
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt && alembic upgrade head
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: fx-signal-db
+          property: connectionString
+      - key: MOCK_DATA_ENABLED
+        value: true
+      - key: LIVE_RECOMMENDATIONS_ENABLED
+        value: false
+      - key: PAPER_VALIDATION_MODE_ENABLED
+        value: true
+  - type: web
+    name: fx-signal-frontend
+    runtime: node
+    rootDir: frontend
+    buildCommand: npm install && npm run build
+    startCommand: npm run start -- --port $PORT
+    envVars:
+      - key: NEXT_PUBLIC_API_BASE_URL
+        fromService:
+          type: web
+          name: fx-signal-backend
+          property: hostport
+  - type: worker
+    name: fx-signal-worker
+    runtime: python
+    buildCommand: pip install -r backend/requirements.txt
+    startCommand: PYTHONPATH=backend python workers/main.py signal_scan
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: fx-signal-db
+          property: connectionString
+      - key: MOCK_DATA_ENABLED
+        value: true
+      - key: LIVE_RECOMMENDATIONS_ENABLED
+        value: false
+cronJobs:
+  - name: fx-candle-sync
+    schedule: "*/15 * * * *"
+    runtime: python
+    buildCommand: pip install -r backend/requirements.txt
+    startCommand: PYTHONPATH=backend python workers/main.py candle_sync
+  - name: fx-signal-scan
+    schedule: "*/15 * * * *"
+    runtime: python
+    buildCommand: pip install -r backend/requirements.txt
+    startCommand: PYTHONPATH=backend python workers/main.py signal_scan
+databases:
+  - name: fx-signal-db
+    plan: free
