@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>SignalGlass Market Browser</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <div class="background-orb orb-one"></div>
+    <div class="background-orb orb-two"></div>
+
+    <header class="topbar">
+      <a class="brand" href="/" aria-label="SignalGlass home">
+        <span class="brand-mark"></span>
+        <span>SignalGlass</span>
+      </a>
+      <nav aria-label="Primary navigation">
+        <a href="#browser">Browser</a>
+        <a href="#intelligence">Intelligence</a>
+        <a href="#workspace">Workspace</a>
+      </nav>
+      <button class="ghost-button" id="refreshQuote" type="button">Refresh</button>
+    </header>
+
+    <main>
+      <section class="hero">
+        <p class="eyebrow">Market intelligence studio</p>
+        <h1>Browse any market page. Turn its ticker into a live signal board.</h1>
+        <p class="hero-copy">
+          A calm, glass-rich trading interface inspired by premium product pages, built around
+          a functional browser, automatic ticker detection, and live quote visualization.
+        </p>
+        <div class="hero-actions">
+          <a class="primary-button" href="#browser">Launch browser</a>
+          <button class="secondary-button" id="demoApple" type="button">Load AAPL demo</button>
+        </div>
+      </section>
+
+      <section class="showcase" id="workspace">
+        <article class="quote-card" id="intelligence" aria-live="polite">
+          <div class="quote-header">
+            <div>
+              <p class="eyebrow">Live instrument</p>
+              <h2 id="quoteName">Awaiting ticker</h2>
+              <p class="muted" id="quoteExchange">Paste a market URL or symbol to begin.</p>
+            </div>
+            <div class="ticker-pill" id="tickerPill">--</div>
+          </div>
+
+          <div class="price-row">
+            <span id="quotePrice">$0.00</span>
+            <span class="change neutral" id="quoteChange">0.00%</span>
+          </div>
+
+          <canvas id="priceChart" width="920" height="320" aria-label="Intraday price chart"></canvas>
+
+          <div class="metrics">
+            <div>
+              <span>Previous close</span>
+              <strong id="previousClose">--</strong>
+            </div>
+            <div>
+              <span>Currency</span>
+              <strong id="currency">--</strong>
+            </div>
+            <div>
+              <span>Market state</span>
+              <strong id="marketState">--</strong>
+            </div>
+            <div>
+              <span>Last update</span>
+              <strong id="lastUpdate">--</strong>
+            </div>
+          </div>
+        </article>
+
+        <aside class="insight-panel">
+          <p class="eyebrow">Signal summary</p>
+          <h3 id="signalTitle">Ready for analysis</h3>
+          <p id="signalCopy">
+            SignalGlass will resolve the ticker, fetch the latest intraday series, and summarize
+            direction, session momentum, and quote status.
+          </p>
+          <div class="chip-row" id="sampleTickers">
+            <button type="button" data-symbol="AAPL">AAPL</button>
+            <button type="button" data-symbol="TSLA">TSLA</button>
+            <button type="button" data-symbol="MSFT">MSFT</button>
+            <button type="button" data-symbol="BTC-USD">BTC</button>
+          </div>
+        </aside>
+      </section>
+
+      <section class="browser-shell" id="browser">
+        <div class="browser-toolbar">
+          <div class="traffic-lights" aria-hidden="true">
+            <span></span>
+            <span></span>
+            <span></span>
+          </div>
+          <form id="browserForm" class="address-form">
+            <label class="sr-only" for="marketUrl">Market URL or ticker</label>
+            <input
+              id="marketUrl"
+              name="marketUrl"
+              autocomplete="off"
+              spellcheck="false"
+              placeholder="Paste a ticker URL, e.g. https://finance.yahoo.com/quote/NVDA"
+            />
+            <button type="submit">Go</button>
+          </form>
+          <button class="utility-button" id="copyUrl" type="button">Copy URL</button>
+          <button class="utility-button" id="openUrl" type="button">Open</button>
+          <button class="capture-button" id="captureTicker" type="button">Pull live data</button>
+        </div>
+
+        <div class="browser-content">
+          <iframe
+            id="marketFrame"
+            title="Built-in market browser"
+            src="https://finance.yahoo.com/quote/AAPL"
+            referrerpolicy="no-referrer"
+          ></iframe>
+          <div class="browser-note">
+            Some market sites block embedded browsing. If a page refuses to load here, keep its URL
+            in the address bar or open it in a new tab, then press <strong>Pull live data</strong>.
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <span>SignalGlass Trading Tool</span>
+      <span>Data is sourced through a server-side market provider proxy.</span>
+    </footer>
+
+    <script src="/app.js" type="module"></script>
+  </body>
+</html>
