@@ -2,9 +2,11 @@
 .env.local
 __pycache__/
 *.py[cod]
+*.pyc
 .pytest_cache/
 .mypy_cache/
 .ruff_cache/
+.venv/
 backend/fx_signal_intelligence.db
 backend/.venv/
 frontend/.next/
