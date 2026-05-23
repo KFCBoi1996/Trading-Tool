@@ -3,6 +3,7 @@ from __future__ import annotations
 from app.constants import ARBITER_VERSION, BLOCKING_DATA_STATUSES
 from app.schemas import ArbiterDecisionOut, NewsRiskOut, RankingResultOut, RiskPlanOut, RiskReviewOut
 
+
 class FinalArbiter:
     def decide(self, data_status: str, data_quality_passed: bool, news_risk: NewsRiskOut, ranking: RankingResultOut, risk_plan: RiskPlanOut, risk_review: RiskReviewOut, feature_flags: dict[str, bool]) -> ArbiterDecisionOut:
         decision = ranking.decision.upper()

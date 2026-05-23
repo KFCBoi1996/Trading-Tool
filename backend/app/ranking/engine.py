@@ -3,6 +3,7 @@ from __future__ import annotations
 from app.constants import BLOCKING_DATA_STATUSES, MINIMUM_REWARD_RISK, RANKING_VERSION
 from app.schemas import NewsRiskOut, RankingResultOut, RegimeSnapshotOut, RiskPlanOut, StrategySignalOut
 
+
 class RankingEngine:
     def rank(self, signal: StrategySignalOut, regime: RegimeSnapshotOut, news_risk: NewsRiskOut, risk_plan: RiskPlanOut, data_quality_passed: bool) -> RankingResultOut:
         breakdown = {

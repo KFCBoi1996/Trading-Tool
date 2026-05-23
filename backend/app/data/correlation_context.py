@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from app.schemas import CorrelationContextOut, Evidence
 
+
 class CorrelationContextEngine:
     def get_context(self, instrument: str) -> CorrelationContextOut:
         return CorrelationContextOut(

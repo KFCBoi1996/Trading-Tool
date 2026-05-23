@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 import math
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
+
 from app.constants import SUPPORTED_INSTRUMENTS
 from app.schemas import CandleOut, QuoteOut
+
 from .provider_interfaces import EconomicCalendarProvider, ForexCandleProvider, NewsProvider
 
 _TIMEFRAME_MINUTES = {"M15": 15, "H1": 60, "H4": 240}
@@ -14,13 +16,14 @@ class DeterministicMockMarketProvider(ForexCandleProvider, EconomicCalendarProvi
 
     def _anchor(self, timeframe: str) -> datetime:
         minutes = _TIMEFRAME_MINUTES[timeframe]
-        now = datetime.now(timezone.utc).replace(second=0, microsecond=0)
-        floored_minute = (now.minute // minutes) * minutes if minutes < 60 else 0
+        now = datetime.now(UTC).replace(second=0, microsecond=0)
         if timeframe == "M15":
-            return now.replace(minute=floored_minute)
+            return now.replace(minute=(now.minute // minutes) * minutes)
         if timeframe == "H1":
             return now.replace(minute=0)
-        return now.replace(hour=(now.hour // 4) * 4, minute=0)
+        if timeframe == "H4":
+            return now.replace(hour=(now.hour // 4) * 4, minute=0)
+        raise ValueError(f"Unsupported timeframe: {timeframe}")
 
     def _price_at(self, instrument: str, index: int) -> float:
         base = _BASE_PRICES[instrument]
@@ -78,7 +81,7 @@ class DeterministicMockMarketProvider(ForexCandleProvider, EconomicCalendarProvi
         return QuoteOut(
             provider=self.provider_name,
             instrument=instrument,
-            timestamp=datetime.now(timezone.utc).replace(second=0, microsecond=0),
+            timestamp=datetime.now(UTC).replace(second=0, microsecond=0),
             bid=bid,
             ask=ask,
             mid=mid,
@@ -91,7 +94,7 @@ class DeterministicMockMarketProvider(ForexCandleProvider, EconomicCalendarProvi
     def get_events(self, start_time: datetime, end_time: datetime, currencies: list[str]) -> list[dict]:
         events: list[dict] = []
         for idx, currency in enumerate(sorted(set(currencies))):
-            event_time = (datetime.now(timezone.utc) + timedelta(hours=4 + idx)).replace(minute=30, second=0, microsecond=0)
+            event_time = (datetime.now(UTC) + timedelta(hours=4 + idx)).replace(minute=30, second=0, microsecond=0)
             if start_time <= event_time <= end_time:
                 events.append({
                     "provider": self.provider_name,
@@ -111,7 +114,7 @@ class DeterministicMockMarketProvider(ForexCandleProvider, EconomicCalendarProvi
     def get_news(self, query: str, currencies: list[str], start_time: datetime, end_time: datetime) -> list[dict]:
         return [{
             "provider": self.provider_name,
-            "published_at": datetime.now(timezone.utc).isoformat(),
+            "published_at": datetime.now(UTC).isoformat(),
             "source": "MOCK_DATA",
             "title": f"Mock macro headline for {'/'.join(currencies)}",
             "summary": "Deterministic mock news used because no live news provider key is configured.",

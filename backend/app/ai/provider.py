@@ -3,6 +3,7 @@ from __future__ import annotations
 from app.constants import ANALYST_PROMPT_VERSION, RISK_REVIEWER_PROMPT_VERSION
 from app.schemas import AIAnalysisOut, RankingResultOut, RiskPlanOut, RiskReviewOut, StrategySignalOut
 
+
 class LLMProvider:
     model_name = "rules_only_llm_stub"
 

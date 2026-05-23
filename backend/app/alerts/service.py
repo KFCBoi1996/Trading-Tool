@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 from sqlalchemy.orm import Session
+
 from app.db.models import Alert
 from app.schemas import ArbiterDecisionOut
+
 
 class AlertService:
     def create_if_allowed(self, db: Session, user_id: str | None, signal_id: str, alert_type: str, arbiter: ArbiterDecisionOut) -> Alert | None:

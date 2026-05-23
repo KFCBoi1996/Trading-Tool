@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from app.schemas import Evidence, FeatureSnapshot, RegimeSnapshotOut
 
+
 class RegimeEngine:
     def classify(self, features: FeatureSnapshot) -> RegimeSnapshotOut:
         preferred: list[str] = []

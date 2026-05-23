@@ -2,7 +2,9 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from datetime import datetime
+
 from app.schemas import CandleOut, QuoteOut
+
 
 class ForexCandleProvider(ABC):
     provider_name: str

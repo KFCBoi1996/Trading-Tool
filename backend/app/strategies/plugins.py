@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 from app.schemas import Evidence, RiskFlag, StrategySignalOut
+
 from .base import BaseStrategy, StrategyContext
+
 
 class RuleStrategy(BaseStrategy):
     strategy_id = "base_rule"
@@ -33,10 +35,10 @@ class RuleStrategy(BaseStrategy):
             return {"low": low, "high": high}, stop, [low - risk * 1.6, low - risk * 2.2]
         return {"low": None, "high": None}, None, [None, None]
 
-    def _status(self, context: StrategyContext, direction: str, family_match: bool = True) -> str:
+    def _status(self, context: StrategyContext, direction: str) -> str:
         if direction == "none" or context.news_risk.blackout_active:
             return "rejected"
-        if not family_match or context.strategy_id in context.regime.blocked_strategies:  # type: ignore[attr-defined]
+        if self.strategy_id in context.regime.blocked_strategies:
             return "watchlist"
         return "active"
 
@@ -48,7 +50,7 @@ class RuleStrategy(BaseStrategy):
             confidence += 10
         if self.strategy_id in context.regime.preferred_strategies:
             confidence += 8
-        risk_flags = []
+        risk_flags: list[RiskFlag] = []
         if context.news_risk.news_risk_status != "clear":
             risk_flags.append(RiskFlag(flag_id="news_risk", text=f"News/calendar status is {context.news_risk.news_risk_status}."))
         if not context.setup_features.spread_threshold_passed:
@@ -61,13 +63,21 @@ class RuleStrategy(BaseStrategy):
             timeframe=context.setup_timeframe,
             trigger_timeframe=context.trigger_timeframe,
             direction=direction,  # type: ignore[arg-type]
-            status="rejected" if direction == "none" or context.news_risk.blackout_active else "active",
+            status=self._status(context, direction),
             entry_zone=entry_zone,
             suggested_stop=stop,
             suggested_targets=targets,
             evidence=[
-                Evidence(evidence_id=f"strategy:{self.strategy_id}:trigger", text=f"{self.description} evaluated with deterministic feature inputs.", source="strategy_engine"),
-                Evidence(evidence_id=f"strategy:{self.strategy_id}:regime", text=f"Regime preference list: {', '.join(context.regime.preferred_strategies) or 'none'}.", source="regime_engine"),
+                Evidence(
+                    evidence_id=f"strategy:{self.strategy_id}:trigger",
+                    text=f"{self.description} evaluated with deterministic feature inputs.",
+                    source="strategy_engine",
+                ),
+                Evidence(
+                    evidence_id=f"strategy:{self.strategy_id}:regime",
+                    text=f"Regime preference list: {', '.join(context.regime.preferred_strategies) or 'none'}.",
+                    source="regime_engine",
+                ),
             ],
             risk_flags=risk_flags,
             raw_confidence=max(0.0, min(100.0, confidence)),
