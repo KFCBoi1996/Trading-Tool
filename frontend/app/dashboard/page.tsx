@@ -1,5 +1,6 @@
 import { ApiErrorBanner } from '../../components/ApiErrorBanner';
 import { DataStatusBanner } from '../../components/DataStatusBanner';
+import { MarketBrowser } from '../../components/MarketBrowser';
 import { ScanButton } from '../../components/ScanButton';
 import { SignalCard } from '../../components/SignalCard';
 import { getHealth, getRecommendation, instruments } from '../../lib/api';
@@ -12,18 +13,24 @@ export default async function DashboardPage() {
   const health = healthResult.data;
   const firstError = healthResult.error ?? recommendationResults.find((r) => r.error)?.error ?? null;
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
-        <div>
-          <p className="text-sm uppercase tracking-wide text-sky-300">Decision-support only</p>
-          <h1 className="mt-2 text-4xl font-bold">Signal Intelligence Dashboard</h1>
-          <p className="mt-3 max-w-3xl text-slate-300">
-            Scans selected FX pairs, ranks deterministic setups, blocks unsafe recommendations, and journals final decisions. No broker execution or trade buttons exist.
-          </p>
+    <div className="space-y-8">
+      <div className="relative overflow-hidden rounded-[2rem] border border-white/10 bg-[radial-gradient(circle_at_20%_20%,rgba(14,165,233,0.28),transparent_30rem),linear-gradient(135deg,#111827,#030712)] p-8 shadow-2xl shadow-black/30 md:p-12">
+        <div className="absolute right-10 top-10 h-48 w-48 rounded-full bg-indigo-500/20 blur-3xl" />
+        <div className="relative max-w-5xl">
+          <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+            <div>
+              <p className="text-sm font-bold uppercase tracking-[0.35em] text-sky-300">Decision-support only</p>
+              <h1 className="mt-4 text-5xl font-black leading-[0.9] tracking-[-0.08em] md:text-7xl">Signal Intelligence Dashboard</h1>
+              <p className="mt-5 max-w-3xl text-lg leading-8 text-slate-300">
+                Apple-inspired market command center for browsing ticker pages, extracting symbols, and pairing live quote intelligence with deterministic FX recommendations. No broker execution or trade buttons exist.
+              </p>
+            </div>
+            <ScanButton />
+          </div>
         </div>
-        <ScanButton />
       </div>
       <ApiErrorBanner error={firstError} />
+      <MarketBrowser />
       <DataStatusBanner
         status={health.mock_data_enabled ? 'MOCK' : 'LIVE'}
         provider="backend config"

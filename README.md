@@ -1,6 +1,6 @@
 # FX Signal Intelligence
 
-A production-oriented forex signal intelligence and decision-support service. The app scans selected FX pairs, computes deterministic technical features, evaluates plugin strategies, checks regime/news/spread/data quality, ranks setups, builds a risk plan, runs a rules-only AI-compatible review path, passes every output through a final arbiter, journals decisions, and writes append-only audit records.
+A production-grade forex signal intelligence and decision-support service with an integrated market intelligence dashboard ("SignalGlass"). The app scans selected FX pairs, computes deterministic technical features, evaluates plugin strategies, checks regime/news/spread/data quality, ranks setups, builds a risk plan, runs a rules-only AI-compatible review path, passes every output through a final arbiter, journals decisions, and writes append-only audit records.
 
 This app does **not** place trades, execute orders, connect to broker execution endpoints, store broker execution credentials, or claim guaranteed performance.
 
@@ -8,82 +8,54 @@ This app does **not** place trades, execute orders, connect to broker execution 
 
 See [`CONTRIBUTING.md`](./CONTRIBUTING.md), [`SECURITY.md`](./SECURITY.md), and [`docs/DEPLOYMENT_CHECKLIST.md`](./docs/DEPLOYMENT_CHECKLIST.md) for engineering practices and the live-deploy gate.
 
-## Implementation plan
+## Features
 
-1. Establish the monorepo structure, FastAPI backend, Next.js frontend, worker, health checks, environment examples, CI, and Render deployment files.
-2. Add PostgreSQL-compatible SQLAlchemy models and Alembic baseline migration for instruments, candles, quotes, events, news, strategies, signals, rankings, plans, AI reviews, outcomes, users, watchlists, alerts, audit log, health, and feature flags.
-3. Add provider interfaces plus deterministic mock adapters. Mock data is labeled `MOCK_DATA`/`MOCK` and blocks user-facing live recommendations.
-4. Implement deterministic feature, regime, strategy, news, ranking, risk, AI-review-stub, final arbiter, journal, audit, backtest-scaffold, alerts, and health modules.
-5. Expose the required API endpoint surface.
-6. Build frontend screens for dashboard, pair detail/chart, signal detail, strategy lab, journal, settings, and admin health.
-7. Add worker jobs, CI, tests, Docker Compose, and Render deployment instructions.
+### Backend (`backend/`)
+- FastAPI with lifespan startup, structured JSON logging, per-request IDs, stable error envelope.
+- 12 deterministic strategy plugins, regime/news/risk/ranking engines, AI provider abstraction.
+- Final Arbiter gates every decision; hard rules override AI; mock data blocks live recommendations.
+- Append-only `recommendation_audit_log` stores the full serialized recommendation.
+- `OutcomeTracker` walks stored candles to mark TP1/TP2/SL/expired outcomes; honest about ambiguous candles.
+- `POST /api/scan` produces; `GET /api/recommendations/{instrument}` reads from the cached audit log within 15 minutes, falls back to scanning when stale.
+- Ruff lint, pytest (27+ tests), Alembic migration baseline.
 
-## Repo structure
+### Frontend (`frontend/`)
+- Next.js + Tailwind dashboard with the SignalGlass UI language.
+- Built-in **MarketBrowser** with URL-to-ticker detection, sample tickers, and live quote sparkline via the proxy at `/api/market/quote`.
+- FX recommendation cards, pair detail with TradingView Lightweight Charts (entry/SL/TP/TP2 price lines drawn only when the risk engine produced them), signal detail, journal, settings, admin health pages.
+- Precision-aware price formatting (5 dp for majors, 3 dp for JPY pairs), scan trigger button, structured error UI surfacing backend `request_id`.
+- ESLint flat config + TypeScript strict, all CI checks green.
 
-```text
-backend/
-  alembic/
-  app/
-    api/
-    db/
-    data/
-    features/
-    strategies/
-    regime/
-    news/
-    ranking/
-    risk/
-    arbiter/
-    ai/
-    backtesting/
-    journal/
-    audit/
-    health/
-    alerts/
-  tests/
-frontend/
-  app/dashboard/
-  app/pair/[instrument]/
-  app/signals/[id]/
-  app/strategy-lab/
-  app/journal/
-  app/settings/
-  app/admin/health/
-  components/
-  lib/
-  types/
-workers/
-infra/
-.github/workflows/
-render.yaml
-docker-compose.yml
-```
+### Worker (`workers/`)
+- Real jobs for `candle_sync`, `quote_sync`, `calendar_sync`, `news_sync`, `signal_scan`, `outcome_tracking`, and `health_heartbeat`, all writing `system_health_events` per run.
 
-## Module-by-module architecture
+### Infra
+- Non-root Dockerfiles with HEALTHCHECKs (backend, worker, frontend).
+- Docker Compose with Postgres/Redis healthchecks.
+- `render.yaml` with `healthCheckPath`, the standalone Next.js server, and cron jobs for candle sync, signal scan, outcome tracking, and heartbeat.
+- CI: backend Ruff + Alembic + pytest; frontend ESLint + type-check + build.
 
-- **Data providers** (`backend/app/data`): Interface-based forex, calendar, and news providers. Real providers are explicit stubs until keys/adapters are configured. The deterministic mock provider returns reproducible candles/quotes/events/news and marks all outputs as mock.
-- **Feature engine** (`backend/app/features`): Calculates EMA, SMA, RSI, MACD, ATR, ADX-style trend strength, Bollinger, Donchian, swings, support/resistance, session, volatility, spread, and derived status fields from candles/quotes.
-- **Strategy engine** (`backend/app/strategies`): Plugin-style `BaseStrategy` with 12 MVP strategy classes. Strategies emit `StrategySignalOut` objects with evidence IDs and never produce final recommendations.
-- **Regime engine** (`backend/app/regime`): Classifies trend/range/volatility/session context and preferred/blocked strategy families.
-- **News/calendar engine** (`backend/app/news`): Applies blackout/caution logic from provider events and labels mock/unavailable data.
-- **Provider reconciliation** (`backend/app/data/reconciliation.py`): Returns `SINGLE_PROVIDER` for MVP and is ready for multi-provider disagreement checks.
-- **Correlation context** (`backend/app/data/correlation_context.py`): Scaffold that returns unavailable rather than inventing DXY/yield/commodity context.
-- **Ranking engine** (`backend/app/ranking`): Transparent weighted scoring with hard overrides for data quality, mock/stale/degraded/unavailable data, news blackout, spread, reward/risk, missing levels, and missed entries.
-- **Risk engine** (`backend/app/risk`): Calculates entry zone, stop, TP1/TP2, reward/risk, invalidation, validity window, spread cost, and missed-entry rejection.
-- **AI layer** (`backend/app/ai`): LLM provider abstraction with a rules-only structured JSON stub. It summarizes only backend-provided values and cannot create prices, scores, or trade levels.
-- **Final arbiter** (`backend/app/arbiter`): The only module allowed to set display mode. Hard rules override AI; mock data and paper validation block user-facing trade recommendations.
-- **Journal/audit** (`backend/app/journal`, `backend/app/audit`): Saves signals/plans/rankings and writes append-only audit log rows for final decisions.
-- **Backtesting** (`backend/app/backtesting`): Scaffold returns “Backtest unavailable” until actual stored candle samples are calculated; it makes no performance claims.
-- **Frontend** (`frontend/`): Next.js app using Tailwind and TradingView Lightweight Charts with safety banners and no trade execution controls.
-- **Workers** (`workers/`): Job entrypoint for sync, scan, reconciliation, outcome tracking, backtest refresh, and health heartbeat.
+## Module architecture
 
-## Database schema summary
+- **Data providers** (`backend/app/data/`): forex, calendar, news interfaces + deterministic mock + provider reconciliation.
+- **Feature engine** (`backend/app/features/`): EMA/SMA/RSI/MACD/ATR/ADX/Bollinger/Donchian + structure/session/volatility/spread features.
+- **Strategy engine** (`backend/app/strategies/`): 12 plugin classes with versioned `strategy_id`/`strategy_version` and required `evidence_id`s.
+- **Regime engine** (`backend/app/regime/`): trend/range/volatility/session classifier with preferred/blocked strategy mapping.
+- **News engine** (`backend/app/news/`): blackout/caution windows from calendar events.
+- **Ranking engine** (`backend/app/ranking/`): weighted score with hard overrides.
+- **Risk engine** (`backend/app/risk/`): entry/SL/TP1/TP2, RR, invalidation, validity window, missed-entry detection.
+- **AI layer** (`backend/app/ai/`): provider abstraction with rules-only structured JSON stub; AI cannot create numeric trade levels or override hard risk rules.
+- **Final Arbiter** (`backend/app/arbiter/`): only module allowed to set the display mode; respects mock-data and paper-validation flags.
+- **Journal + audit** (`backend/app/journal/`, `backend/app/audit/`): persists signals, plans, rankings, and writes append-only audit rows.
+- **Observability** (`backend/app/observability/`): structured logging, request middleware, error handlers.
 
-The Alembic baseline creates these tables: `instruments`, `candles`, `quotes`, `economic_events`, `news_items`, `strategy_definitions`, `strategy_signals`, `regime_snapshots`, `ranked_setups`, `trade_plans`, `ai_reviews`, `signal_outcomes`, `users`, `watchlists`, `alerts`, `recommendation_audit_log`, `system_health_events`, and `feature_flags`.
+## Database
 
-Required indexes are included for candles, quotes, economic events, news, strategy signals, ranked setups, trade plans, outcomes, and audit queries. Candle/quote schemas are normal PostgreSQL tables that can later migrate to TimescaleDB hypertables if needed.
+Alembic baseline creates: `instruments`, `candles`, `quotes`, `economic_events`, `news_items`, `strategy_definitions`, `strategy_signals`, `regime_snapshots`, `ranked_setups`, `trade_plans`, `ai_reviews`, `signal_outcomes`, `users`, `watchlists`, `alerts`, `recommendation_audit_log`, `system_health_events`, `feature_flags`.
 
-## API endpoints
+Indexed for the most common queries (candles by instrument/timeframe/timestamp, audit by signal/created_at/decision, outcomes by signal, etc.). Candle/quote tables are normal PostgreSQL and can later move to TimescaleDB hypertables.
+
+## API surface
 
 Health:
 - `GET /api/health`
@@ -96,45 +68,30 @@ Market:
 - `GET /api/spread/{instrument}`
 - `GET /api/data-status/{instrument}`
 
-Signals/recommendations:
-- `POST /api/scan`
-- `GET /api/signals`
-- `GET /api/signals/top`
-- `GET /api/signals/rejected`
-- `GET /api/signals/{signal_id}`
-- `GET /api/recommendations/{instrument}`
+Signals & recommendations:
+- `POST /api/scan` and `POST /api/scan/{instrument}`
+- `GET /api/signals`, `/api/signals/top`, `/api/signals/rejected`, `/api/signals/{signal_id}`
+- `GET /api/recommendations/{instrument}` (cached when fresh, scan otherwise)
 - `GET /api/recommendations/signal/{signal_id}`
 - `GET /api/trade-plans/{signal_id}`
 
-News/calendar:
-- `GET /api/calendar/{instrument}`
-- `GET /api/news/{instrument}`
-- `GET /api/news-risk/{instrument}`
-
-Backtesting:
-- `POST /api/backtest/run`
-- `GET /api/backtest/results`
-- `GET /api/backtest/summary/{strategy_id}`
-
-Journal/audit/alerts/flags:
-- `GET /api/journal`
-- `GET /api/journal/stats`
-- `POST /api/journal/outcome/update`
+News, backtesting, journal, audit, alerts, feature flags:
+- `GET /api/calendar/{instrument}`, `/api/news/{instrument}`, `/api/news-risk/{instrument}`
+- `POST /api/backtest/run`, `GET /api/backtest/results`, `GET /api/backtest/summary/{strategy_id}`
+- `GET /api/journal`, `/api/journal/stats`, `POST /api/journal/outcome/update`, `POST /api/journal/outcome/track`
 - `GET /api/audit/{signal_id}`
-- `POST /api/alerts`
-- `GET /api/alerts`
-- `DELETE /api/alerts/{alert_id}`
-- `GET /api/feature-flags`
-- `PATCH /api/feature-flags/{flag_name}`
+- `POST /api/alerts` (only when Final Arbiter allows), `GET /api/alerts`, `DELETE /api/alerts/{alert_id}`
+- `GET /api/feature-flags`, `PATCH /api/feature-flags/{flag_name}`
+
+Frontend market proxy:
+- `GET /api/market/quote?symbol=...` (Yahoo Finance-style intraday data)
+- `GET /api/market/resolve?value=...`
 
 ## Local setup
 
 ### Backend
-
 ```bash
 cd backend
-python3 -m venv .venv
-source .venv/bin/activate
 pip install -r requirements.txt
 cp .env.example .env
 alembic upgrade head
@@ -142,22 +99,21 @@ uvicorn app.main:app --reload --port 8000
 ```
 
 ### Frontend
-
 ```bash
 cd frontend
 npm install
 cp .env.example .env.local
 npm run dev
 ```
+Then open [http://localhost:3000](http://localhost:3000).
 
 ### Worker
-
 ```bash
-PYTHONPATH=backend python3 workers/main.py signal_scan
+PYTHONPATH=backend python workers/main.py signal_scan
 ```
+Available jobs: `candle_sync`, `quote_sync`, `calendar_sync`, `news_sync`, `signal_scan`, `outcome_tracking`, `provider_reconciliation`, `backtest_refresh`, `health_heartbeat`.
 
 ### Docker Compose
-
 ```bash
 cp .env.example .env
 docker compose up --build
@@ -165,140 +121,38 @@ docker compose up --build
 
 ## Render deployment
 
-Use `render.yaml` from the repo root. It defines:
+Use `render.yaml` from the repo root. It defines the backend, frontend (standalone Next.js server), worker, cron jobs (candle sync, signal scan, outcome tracking, heartbeat), and PostgreSQL database. See [`docs/DEPLOYMENT_CHECKLIST.md`](./docs/DEPLOYMENT_CHECKLIST.md) for the go-live gate.
 
-- Backend web service: installs backend requirements, runs `alembic upgrade head`, starts FastAPI.
-- Frontend web service: installs npm dependencies, builds Next.js, starts Next.
-- Worker service: runs the worker scan entrypoint.
-- Cron jobs: candle sync and signal scan placeholders.
-- PostgreSQL database.
+Required environment variables (see `backend/.env.example`):
 
-Set real provider keys and flip flags only after adapters are implemented and verified:
-
-```text
-FOREX_DATA_PROVIDER
-FOREX_API_KEY
-CALENDAR_DATA_PROVIDER
-CALENDAR_API_KEY
-NEWS_DATA_PROVIDER
-NEWS_API_KEY
+```
+DATABASE_URL
+REDIS_URL                # optional
+FOREX_DATA_PROVIDER / FOREX_API_KEY
+CALENDAR_DATA_PROVIDER / CALENDAR_API_KEY
+NEWS_DATA_PROVIDER / NEWS_API_KEY
 OPENAI_API_KEY or LLM_API_KEY
-MOCK_DATA_ENABLED=false
-LIVE_RECOMMENDATIONS_ENABLED=true
-PAPER_VALIDATION_MODE_ENABLED=false
+MOCK_DATA_ENABLED
+LIVE_RECOMMENDATIONS_ENABLED
+PAPER_VALIDATION_MODE_ENABLED
+ALLOW_DELAYED_RECOMMENDATIONS
+CORS_ORIGINS
 ```
 
-## Environment variables
-
-See `.env.example`, `backend/.env.example`, and `frontend/.env.example`.
-
-Important safety flags:
-
-- `MOCK_DATA_ENABLED=true` labels all mock inputs and blocks live recommendations.
-- `LIVE_RECOMMENDATIONS_ENABLED=false` prevents user-facing trade recommendations.
-- `PAPER_VALIDATION_MODE_ENABLED=true` journals setups without showing them as live recommendations.
-
-## Test and validation commands
+## Verify
 
 ```bash
-cd backend
-pip install -r requirements.txt
-alembic upgrade head
-pytest
+cd backend && ruff check . && DATABASE_URL=sqlite+pysqlite:///:memory: pytest
 ```
 
 ```bash
-cd frontend
-npm install
-npm run type-check
-npm run build
+cd frontend && npm run lint && npm run type-check && npm run build
 ```
-
-CI runs backend tests, migration check, frontend type checks, and frontend build.
-
-## Known assumptions
-
-- No live market, calendar, news, or LLM API keys are configured by default.
-- Deterministic mock providers are used for MVP operation and UI development.
-- Mock data is explicitly labeled and blocks user-facing live recommendations.
-- Backtest metrics are not claimed until calculated from actual stored candle data.
-- Paper validation mode is enabled by default.
-
-## Production-grade features
-
-- Structured JSON logging with per-request IDs (`backend/app/observability/`).
-- Stable error envelope for HTTP, validation, and unexpected errors.
-- Real DB ping in `/api/health`.
-- `POST /api/scan` and `POST /api/scan/{instrument}` produce signals; `GET /api/recommendations/{instrument}` reads from the audit log when fresh (15-minute window).
-- `OutcomeTracker` walks stored candles and writes `signal_outcomes` for hit TP/SL or expired setups; ambiguous candles are recorded honestly.
-- Worker jobs (`candle_sync`, `quote_sync`, `calendar_sync`, `news_sync`, `signal_scan`, `outcome_tracking`, `health_heartbeat`) write to `system_health_events`.
-- Alerts are only created when the Final Arbiter sets `allowed_to_alert=true`.
-- Backend lint (Ruff) and tests (27+) wired into CI; frontend lint (ESLint flat), type-check, and build wired into CI.
-- Dockerfiles run as non-root with HEALTHCHECKs; `docker-compose.yml` waits for healthy Postgres/Redis.
-- Render `render.yaml` includes `healthCheckPath` for backend/frontend and cron jobs for candle sync, signal scan, outcome tracking, and heartbeat.
 
 ## Known limitations
 
-- Real provider adapters are stubs (`backend/app/data/provider_interfaces.py::RealProviderStub`) and must be implemented before flipping `LIVE_RECOMMENDATIONS_ENABLED=true`.
+- Real provider adapters are stubs (`backend/app/data/provider_interfaces.py::RealProviderStub`); they must be implemented before flipping `LIVE_RECOMMENDATIONS_ENABLED=true`.
 - Redis queue integration is scaffolded; the worker currently runs jobs synchronously when invoked.
-- Backtesting returns “Backtest unavailable” until historical stored candles and strategy replay logic are connected.
+- Backtesting returns "Backtest unavailable" until historical stored candles and strategy replay logic are connected.
 - AI uses a rules-only structured stub unless an LLM provider adapter is added.
 - Alerts are recorded in-app only; an external notification channel must be added before production use.
-
-## Mock/scaffolded features
-
-Mock data:
-- Candles, quotes/spreads, economic events, and news headlines from `DeterministicMockMarketProvider`.
-
-Scaffolded for future expansion:
-- Real data providers.
-- Multi-provider reconciliation disagreement checks.
-- Correlation context (DXY, yields, gold, oil, risk sentiment).
-- Backtesting calculations and calibration buckets.
-- Redis-backed queue processing.
-- Email/notification alert delivery.
-- Champion/challenger manual promotion workflow.
-
-## Next-step roadmap
-
-1. Implement real provider adapters and secure Render environment variables.
-2. Replace rules-only LLM stub with a strict JSON LLM adapter and schema validation retry/fail-closed handling.
-3. Add stored-candle backtest replay with lookahead-bias protections and outcome calibration buckets.
-4. Expand outcome tracking to close open signals automatically from completed candles.
-5. Add exact signal detail retrieval from audit payloads and richer chart overlays for support/resistance and strategy markers.
-6. Add Redis-backed worker scheduling and alert delivery.
-# Trading-Tool
-
-Initial scaffold for a quant-oriented trading platform with a clean service architecture.
-
-## Quickstart
-
-```bash
-python -m venv .venv
-source .venv/bin/activate
-pip install -e .[dev]
-pytest
-uvicorn trading_tool.api.app:app --reload
-```
-
-## API
-
-- `GET /health`
-- `POST /v1/signals`
-
-Example payload:
-
-```json
-{
-  "symbol": "AAPL",
-  "timeframe": "1D"
-}
-```
-
-## Project Structure
-
-- `src/trading_tool/api` - HTTP interfaces
-- `src/trading_tool/core` - domain models
-- `src/trading_tool/services` - strategy and orchestration services
-- `docs` - architecture and design notes
-- `infra` - local runtime/deployment bootstrap

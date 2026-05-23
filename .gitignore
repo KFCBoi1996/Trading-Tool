@@ -7,6 +7,9 @@ __pycache__/
 .mypy_cache/
 .ruff_cache/
 .venv/
+node_modules/
+.next/
+*.tsbuildinfo
 backend/fx_signal_intelligence.db
 backend/.venv/
 frontend/.next/
