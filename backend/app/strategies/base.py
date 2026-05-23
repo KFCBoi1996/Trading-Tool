@@ -2,7 +2,9 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
+
 from app.schemas import FeatureSnapshot, NewsRiskOut, QuoteOut, RegimeSnapshotOut, StrategySignalOut
+
 
 @dataclass(frozen=True)
 class StrategyContext:

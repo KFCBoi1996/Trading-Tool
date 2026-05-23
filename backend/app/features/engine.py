@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 from statistics import mean
+
 from app.constants import PAIR_SPREAD_LIMIT_PIPS
 from app.schemas import CandleOut, FeatureSnapshot, QuoteOut
+
 
 def _sma(values: list[float], period: int) -> float | None:
     return mean(values[-period:]) if len(values) >= period else None
@@ -21,7 +23,7 @@ def _rsi(values: list[float], period: int = 14) -> float | None:
         return None
     gains: list[float] = []
     losses: list[float] = []
-    for previous, current in zip(values[-period - 1:-1], values[-period:]):
+    for previous, current in zip(values[-period - 1:-1], values[-period:], strict=False):
         delta = current - previous
         gains.append(max(delta, 0))
         losses.append(abs(min(delta, 0)))
@@ -36,7 +38,7 @@ def _atr(candles: list[CandleOut], period: int = 14) -> float | None:
     if len(candles) <= period:
         return None
     true_ranges: list[float] = []
-    for previous, candle in zip(candles[-period - 1:-1], candles[-period:]):
+    for previous, candle in zip(candles[-period - 1:-1], candles[-period:], strict=False):
         true_ranges.append(max(candle.high - candle.low, abs(candle.high - previous.close), abs(candle.low - previous.close)))
     return mean(true_ranges)
 
@@ -61,7 +63,7 @@ def _adx(candles: list[CandleOut], period: int = 14) -> float | None:
         return None
     directional_moves = []
     ranges = []
-    for previous, candle in zip(candles[-period - 1:-1], candles[-period:]):
+    for previous, candle in zip(candles[-period - 1:-1], candles[-period:], strict=False):
         directional_moves.append(abs(candle.high - previous.high) + abs(candle.low - previous.low))
         ranges.append(max(candle.high - candle.low, abs(candle.high - previous.close), abs(candle.low - previous.close)))
     if not ranges or mean(ranges) == 0:
@@ -111,10 +113,7 @@ class FeatureEngine:
                 trend_direction = "bearish"
         trend_strength = min(100.0, adx14 or 0.0)
         range_strength = 100.0 - min(100.0, trend_strength)
-        if atr14 is not None and latest_close:
-            atr_percentage = (atr14 / latest_close) * 100
-        else:
-            atr_percentage = None
+        atr_percentage = (atr14 / latest_close) * 100 if atr14 is not None and latest_close else None
         avg_range = mean([c.high - c.low for c in candles[-20:]]) if len(candles) >= 20 else None
         latest_range = (latest.high - latest.low) if latest else None
         candle_range_relative_to_atr = (latest_range / atr14) if latest_range is not None and atr14 else None

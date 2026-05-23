@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from app.schemas import BacktestSummaryOut
 
+
 class BacktestingEngine:
     def summarize(self, strategy_id: str, strategy_version: str, instrument: str, timeframe: str) -> BacktestSummaryOut:
         return BacktestSummaryOut(

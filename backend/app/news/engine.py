@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
+
 from app.constants import SUPPORTED_INSTRUMENTS
 from app.data.provider_interfaces import EconomicCalendarProvider, NewsProvider
 from app.schemas import Evidence, NewsRiskOut
@@ -15,7 +16,7 @@ class NewsCalendarRiskEngine:
     def assess(self, instrument: str) -> NewsRiskOut:
         meta = SUPPORTED_INSTRUMENTS[instrument]
         currencies = [meta["base"], meta["quote"]]
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         events = self.calendar_provider.get_events(now - timedelta(hours=1), now + timedelta(hours=24), currencies)
         next_event = min(events, key=lambda event: event["event_time"], default=None)
         blackout_active = False

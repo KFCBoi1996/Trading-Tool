@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime
 from typing import Literal
+
 from pydantic import BaseModel, Field, field_validator
 
 DataStatus = Literal["LIVE", "DELAYED", "MOCK", "STALE", "DEGRADED", "UNAVAILABLE"]

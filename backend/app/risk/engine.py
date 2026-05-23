@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 from datetime import timedelta
+
 from app.constants import MINIMUM_REWARD_RISK, PAIR_SPREAD_LIMIT_PIPS, RISK_ENGINE_VERSION
 from app.schemas import FeatureSnapshot, NewsRiskOut, QuoteOut, RiskPlanOut, StrategySignalOut
+
 
 class RiskEngine:
     def build_plan(self, signal: StrategySignalOut, features: FeatureSnapshot, quote: QuoteOut, news_risk: NewsRiskOut) -> RiskPlanOut:

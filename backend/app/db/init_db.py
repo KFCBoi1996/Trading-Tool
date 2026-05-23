@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 from sqlalchemy.orm import Session
+
 from app.constants import FEATURE_FLAGS, SUPPORTED_INSTRUMENTS
+from app.strategies.plugins import get_strategy_instances
+
 from .models import FeatureFlag, Instrument, StrategyDefinition
 from .session import Base, engine
-from app.strategies.plugins import get_strategy_instances
 
 FLAG_DESCRIPTIONS = {
     "AI_ANALYST_ENABLED": "Allow structured AI analyst summaries when an LLM key is configured.",

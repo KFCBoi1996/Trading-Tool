@@ -1,5 +1,7 @@
+import { ApiErrorBanner } from '../../../components/ApiErrorBanner';
 import { ChartPanel } from '../../../components/ChartPanel';
 import { DataStatusBanner } from '../../../components/DataStatusBanner';
+import { ScanButton } from '../../../components/ScanButton';
 import { getCandles, getRecommendation, instruments } from '../../../lib/api';
 
 export function generateStaticParams() {
@@ -8,24 +10,49 @@ export function generateStaticParams() {
 
 export default async function PairPage({ params }: { params: Promise<{ instrument: string }> }) {
   const { instrument } = await params;
-  const [recommendation, candles] = await Promise.all([getRecommendation(instrument), getCandles(instrument, 'M15')]);
+  const [recommendationResult, candlesResult] = await Promise.all([
+    getRecommendation(instrument),
+    getCandles(instrument, 'M15')
+  ]);
+  const recommendation = recommendationResult.data;
+  const candles = candlesResult.data;
+  const error = recommendationResult.error ?? candlesResult.error ?? null;
   return (
     <div className="space-y-6">
-      <div>
-        <p className="text-sm uppercase tracking-wide text-sky-300">Pair detail</p>
-        <h1 className="mt-2 text-4xl font-bold">{instrument}</h1>
+      <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+        <div>
+          <p className="text-sm uppercase tracking-wide text-sky-300">Pair detail</p>
+          <h1 className="mt-2 text-4xl font-bold">{instrument}</h1>
+        </div>
+        <ScanButton instrument={instrument} />
       </div>
+      <ApiErrorBanner error={error} />
       <DataStatusBanner status={recommendation.data_status} provider={recommendation.data_provider} reason={recommendation.data_quality_rejection_reason} />
       <ChartPanel candles={candles} recommendation={recommendation} />
       <div className="grid gap-5 lg:grid-cols-3">
-        <Panel title="Regime"><p>Trend: {recommendation.regime.trend_state}</p><p>Strength: {recommendation.regime.trend_strength.toFixed(1)}</p><p>Volatility: {recommendation.regime.volatility_state}</p></Panel>
-        <Panel title="News/calendar"><p>Status: {recommendation.news_risk.news_risk_status}</p><p>Blackout: {recommendation.news_risk.blackout_active ? 'yes' : 'no'}</p></Panel>
-        <Panel title="Data quality"><p>Passed: {recommendation.data_quality_passed ? 'yes' : 'no'}</p><p>{recommendation.data_quality_rejection_reason || 'No rejection reason.'}</p></Panel>
+        <Panel title="Regime">
+          <p>Trend: {recommendation.regime.trend_state}</p>
+          <p>Strength: {recommendation.regime.trend_strength.toFixed(1)}</p>
+          <p>Volatility: {recommendation.regime.volatility_state}</p>
+        </Panel>
+        <Panel title="News/calendar">
+          <p>Status: {recommendation.news_risk.news_risk_status}</p>
+          <p>Blackout: {recommendation.news_risk.blackout_active ? 'yes' : 'no'}</p>
+        </Panel>
+        <Panel title="Data quality">
+          <p>Passed: {recommendation.data_quality_passed ? 'yes' : 'no'}</p>
+          <p>{recommendation.data_quality_rejection_reason || 'No rejection reason.'}</p>
+        </Panel>
       </div>
     </div>
   );
 }
 
 function Panel({ title, children }: { title: string; children: React.ReactNode }) {
-  return <section className="rounded-2xl border border-borderline bg-panel p-5"><h2 className="text-lg font-semibold">{title}</h2><div className="mt-3 space-y-2 text-sm text-slate-300">{children}</div></section>;
+  return (
+    <section className="rounded-2xl border border-borderline bg-panel p-5">
+      <h2 className="text-lg font-semibold">{title}</h2>
+      <div className="mt-3 space-y-2 text-sm text-slate-300">{children}</div>
+    </section>
+  );
 }

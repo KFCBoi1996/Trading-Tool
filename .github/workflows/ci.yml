@@ -15,13 +15,23 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - run: pip install -r requirements.txt
-      - run: alembic upgrade head
+          cache: pip
+          cache-dependency-path: backend/requirements.txt
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+          pip install ruff
+      - name: Lint with ruff
+        run: ruff check .
+      - name: Run migrations against SQLite
+        run: alembic upgrade head
         env:
           DATABASE_URL: sqlite+pysqlite:///./ci_fx_signal.db
-      - run: pytest
+      - name: Run pytest
+        run: pytest -ra
         env:
-          DATABASE_URL: sqlite+pysqlite:///./ci_fx_signal.db
+          DATABASE_URL: sqlite+pysqlite:///:memory:
+
   frontend:
     runs-on: ubuntu-latest
     defaults:
@@ -32,6 +42,13 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - run: npm install
-      - run: npm run type-check
-      - run: npm run build
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Install dependencies
+        run: npm ci
+      - name: Lint
+        run: npm run lint
+      - name: Type-check
+        run: npm run type-check
+      - name: Build
+        run: npm run build

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from app.schemas import ProviderReconciliationOut
 
+
 class ProviderReconciliationEngine:
     def reconcile(self, instrument: str, timeframe: str, providers_checked: list[str], data_status: str) -> ProviderReconciliationOut:
         if not providers_checked:
