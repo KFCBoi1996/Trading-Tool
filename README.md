@@ -1,10 +1,12 @@
-# FX Signal Intelligence MVP
+# FX Signal Intelligence
 
-A production-oriented MVP for forex signal intelligence and decision support. The app scans selected FX pairs, computes deterministic technical features, evaluates plugin strategies, checks regime/news/spread/data quality, ranks setups, builds a risk plan, runs a rules-only AI-compatible review path, passes every output through a final arbiter, journals decisions, and writes append-only audit records.
+A production-oriented forex signal intelligence and decision-support service. The app scans selected FX pairs, computes deterministic technical features, evaluates plugin strategies, checks regime/news/spread/data quality, ranks setups, builds a risk plan, runs a rules-only AI-compatible review path, passes every output through a final arbiter, journals decisions, and writes append-only audit records.
 
 This app does **not** place trades, execute orders, connect to broker execution endpoints, store broker execution credentials, or claim guaranteed performance.
 
 > This app is a decision-support and research tool only. It does not execute trades. Forex trading involves substantial risk. No output is guaranteed.
+
+See [`CONTRIBUTING.md`](./CONTRIBUTING.md), [`SECURITY.md`](./SECURITY.md), and [`docs/DEPLOYMENT_CHECKLIST.md`](./docs/DEPLOYMENT_CHECKLIST.md) for engineering practices and the live-deploy gate.
 
 ## Implementation plan
 
@@ -222,14 +224,26 @@ CI runs backend tests, migration check, frontend type checks, and frontend build
 - Backtest metrics are not claimed until calculated from actual stored candle data.
 - Paper validation mode is enabled by default.
 
+## Production-grade features
+
+- Structured JSON logging with per-request IDs (`backend/app/observability/`).
+- Stable error envelope for HTTP, validation, and unexpected errors.
+- Real DB ping in `/api/health`.
+- `POST /api/scan` and `POST /api/scan/{instrument}` produce signals; `GET /api/recommendations/{instrument}` reads from the audit log when fresh (15-minute window).
+- `OutcomeTracker` walks stored candles and writes `signal_outcomes` for hit TP/SL or expired setups; ambiguous candles are recorded honestly.
+- Worker jobs (`candle_sync`, `quote_sync`, `calendar_sync`, `news_sync`, `signal_scan`, `outcome_tracking`, `health_heartbeat`) write to `system_health_events`.
+- Alerts are only created when the Final Arbiter sets `allowed_to_alert=true`.
+- Backend lint (Ruff) and tests (27+) wired into CI; frontend lint (ESLint flat), type-check, and build wired into CI.
+- Dockerfiles run as non-root with HEALTHCHECKs; `docker-compose.yml` waits for healthy Postgres/Redis.
+- Render `render.yaml` includes `healthCheckPath` for backend/frontend and cron jobs for candle sync, signal scan, outcome tracking, and heartbeat.
+
 ## Known limitations
 
-- Real provider adapters are stubs and must be implemented for live data.
-- Redis queue integration is scaffolded; the MVP worker runs jobs synchronously.
+- Real provider adapters are stubs (`backend/app/data/provider_interfaces.py::RealProviderStub`) and must be implemented before flipping `LIVE_RECOMMENDATIONS_ENABLED=true`.
+- Redis queue integration is scaffolded; the worker currently runs jobs synchronously when invoked.
 - Backtesting returns “Backtest unavailable” until historical stored candles and strategy replay logic are connected.
 - AI uses a rules-only structured stub unless an LLM provider adapter is added.
-- Frontend signal detail currently renders a recommendation-shaped detail view and can be extended to fetch an exact audit payload by signal ID.
-- Alerts are scaffolded and require arbiter-approved creation wiring for production notifications.
+- Alerts are recorded in-app only; an external notification channel must be added before production use.
 
 ## Mock/scaffolded features
 

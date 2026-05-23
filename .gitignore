@@ -10,4 +10,5 @@ backend/.venv/
 frontend/.next/
 frontend/node_modules/
 frontend/npm-debug.log*
+frontend/tsconfig.tsbuildinfo
 .DS_Store

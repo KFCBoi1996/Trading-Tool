@@ -1,8 +1,21 @@
 FROM python:3.12-slim
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PYTHONPATH=/app/backend
+
 WORKDIR /app
+
+RUN groupadd --system app && useradd --system --gid app --home /app --shell /usr/sbin/nologin app
+
 COPY backend/requirements.txt ./requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt
+
 COPY backend ./backend
 COPY workers ./workers
-ENV PYTHONPATH=/app/backend
+RUN chown -R app:app /app
+
+USER app
+
 CMD ["python", "workers/main.py", "signal_scan"]

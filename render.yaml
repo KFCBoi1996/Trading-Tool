@@ -3,34 +3,38 @@ services:
     name: fx-signal-backend
     runtime: python
     rootDir: backend
+    plan: starter
+    healthCheckPath: /api/health
     buildCommand: pip install -r requirements.txt && alembic upgrade head
-    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT --workers 2
     envVars:
       - key: DATABASE_URL
         fromDatabase:
           name: fx-signal-db
           property: connectionString
       - key: MOCK_DATA_ENABLED
-        value: true
+        value: "true"
       - key: LIVE_RECOMMENDATIONS_ENABLED
-        value: false
+        value: "false"
       - key: PAPER_VALIDATION_MODE_ENABLED
-        value: true
+        value: "true"
+      - key: CORS_ORIGINS
+        sync: false
   - type: web
     name: fx-signal-frontend
     runtime: node
     rootDir: frontend
+    plan: starter
+    healthCheckPath: /
     buildCommand: npm install && npm run build
-    startCommand: npm run start -- --port $PORT
+    startCommand: npm run start -- --port $PORT --hostname 0.0.0.0
     envVars:
       - key: NEXT_PUBLIC_API_BASE_URL
-        fromService:
-          type: web
-          name: fx-signal-backend
-          property: hostport
+        sync: false
   - type: worker
     name: fx-signal-worker
     runtime: python
+    plan: starter
     buildCommand: pip install -r backend/requirements.txt
     startCommand: PYTHONPATH=backend python workers/main.py signal_scan
     envVars:
@@ -39,9 +43,9 @@ services:
           name: fx-signal-db
           property: connectionString
       - key: MOCK_DATA_ENABLED
-        value: true
+        value: "true"
       - key: LIVE_RECOMMENDATIONS_ENABLED
-        value: false
+        value: "false"
 cronJobs:
   - name: fx-candle-sync
     schedule: "*/15 * * * *"
@@ -53,6 +57,16 @@ cronJobs:
     runtime: python
     buildCommand: pip install -r backend/requirements.txt
     startCommand: PYTHONPATH=backend python workers/main.py signal_scan
+  - name: fx-outcome-tracking
+    schedule: "*/10 * * * *"
+    runtime: python
+    buildCommand: pip install -r backend/requirements.txt
+    startCommand: PYTHONPATH=backend python workers/main.py outcome_tracking
+  - name: fx-health-heartbeat
+    schedule: "*/5 * * * *"
+    runtime: python
+    buildCommand: pip install -r backend/requirements.txt
+    startCommand: PYTHONPATH=backend python workers/main.py health_heartbeat
 databases:
   - name: fx-signal-db
     plan: free
